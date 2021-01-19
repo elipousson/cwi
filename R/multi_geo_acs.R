@@ -5,16 +5,15 @@
 #' This function essentially calls `tidycensus::get_acs()` multiple times, depending on geographic levels chosen, and does minor cleaning, filtering, and aggregation. Note that the underlying `tidycensus::get_acs()` requires a Census API key. As is the case with other `tidycensus` functions, `multi_geo_acs` assumes this key is stored as `CENSUS_API_KEY` in your `.Renviron`. See [tidycensus::census_api_key()] for installation.
 #'
 #' @param table A string giving the ACS table number.
-#' @param year The year of the ACS table; currently defaults 2018 (most recent available).
-#' @param towns A character vector of names of towns to include; `"all"` (default) for all towns optionally filtered by county; or `NULL` to not fetch town-level table.
+#' @param year The year of the ACS table; currently defaults 2019 (most recent available).
+#' @param towns A character vector of names of towns to include; `"all"` for all towns optionally filtered by county; or `NULL` (default) to not fetch town-level table.
 #' @param regions A named list of regions with their town names (defaults `NULL`).
 #' @param counties A character vector of names of counties to include; `"all"` (default) for all counties in the state; or `NULL` to not fetch county-level table.
-#' @param state A string: either name or two-digit FIPS code of a US state. Required; defaults `"09"` (Connecticut).
+#' @param state A string: either name or two-digit FIPS code of a US state. Required; defaults `Sys.getenv("STATE_FIPS_CODE")`. Set default to Connecticut with `Sys.setenv("STATE_FIPS_CODE" = "09")`.
 #' @param tracts A character vector of 11-digit FIPS codes of tracts to include, or `"all"` for all tracts optionally filtered by county. Defaults `NULL`.
 #' @param blockgroups A character vector of 12-digit FIPS codes of block groups to include, or `"all"` for all block groups optionally filtered by county. Defaults `NULL`.
-#' @param msa Logical: whether to fetch New England states' metropolitan statistical areas. Defaults `FALSE`.
+#' @param msa A character vector with the name or GeoID of the metropolitan statistical area to include.
 #' @param us Logical: whether to fetch US-level table. Defaults `FALSE`.
-#' @param new_england Logical: if `TRUE` (the default), limits metro areas to just New England states.
 #' @param survey A string: which ACS estimate to use. Defaults to 5-year (`"acs5"`), but can also be 1-year (`"acs1"`).
 #' @param neighborhoods A data frame with columns for neighborhood name, GEOID of either tracts or block groups, and weight, e.g. share of each tract assigned to a neighborhood. If included, weighted sums and MOEs will be returned for neighborhoods.
 #' @param name Bare column name of neighborhood names. Only relevant if a neighborhood weight table is being used. Defaults `name` to match the neighborhood lookup datasets.
@@ -30,17 +29,33 @@
 #'   towns = "all",
 #'   regions = list(inner_ring = c("Hamden", "East Haven", "West Haven")),
 #'   counties = "New Haven County",
-#'   tracts = unique(nhv_tracts$geoid))
+#'   tracts = unique(nhv_tracts$geoid)
+#' )
 #'
 #' multi_geo_acs("B01003", 2018,
 #'   towns = "Bridgeport",
 #'   counties = "Fairfield County",
 #'   neighborhoods = bridgeport_tracts
 #' )
-#'
 #' }
 #' @export
-multi_geo_acs <- function(table, year = 2018, towns = "all", regions = NULL, counties = "all", state = "09", neighborhoods = NULL, tracts = NULL, blockgroups = NULL, msa = FALSE, us = FALSE, new_england = TRUE, name = name, geoid = geoid, weight = weight, survey = "acs5", verbose = TRUE, key = NULL) {
+multi_geo_acs <- function(table,
+                          year = 2019,
+                          towns = NULL,
+                          regions = NULL,
+                          counties = "all",
+                          state = Sys.getenv("STATE_FIPS_CODE"),
+                          neighborhoods = NULL,
+                          tracts = NULL,
+                          blockgroups = NULL,
+                          msa = NULL,
+                          us = FALSE,
+                          name = name,
+                          geoid = geoid,
+                          weight = weight,
+                          survey = "acs5",
+                          verbose = TRUE,
+                          key = NULL) {
   # check key
   if (is.null(key)) {
     key <- Sys.getenv("CENSUS_API_KEY")
@@ -62,10 +77,8 @@ multi_geo_acs <- function(table, year = 2018, towns = "all", regions = NULL, cou
     dplyr::filter(state_code == st | state_name == st)
   assertthat::assert_that(nrow(state_lookup) > 0, msg = sprintf("%s is not a valid state name or FIPS code", st))
 
-  # if counties don't already end in County, paste it on
   # drop counties that aren't in state lookup with a warning, only if counties != all
   if (!is.null(counties) & !identical(counties, "all")) {
-    counties <- stringr::str_replace(counties, "(?<! County)$", " County")
 
     possible_counties <- state_lookup %>%
       dplyr::pull(county)
@@ -91,9 +104,9 @@ multi_geo_acs <- function(table, year = 2018, towns = "all", regions = NULL, cou
       `[`(1)
     message(stringr::str_glue("Table {table}: {concept}, {year}"))
     if (!is.null(neighborhoods)) {
-      msg <- geo_printout(dplyr::pull(neighborhoods, {{ name }}), towns, regions, counties, st, msa, us, new_england)
+      msg <- geo_printout(dplyr::pull(neighborhoods, {{ name }}), towns, regions, counties, st, msa, us)
     } else {
-      msg <- geo_printout(neighborhoods, towns, regions, counties, st, msa, us, new_england)
+      msg <- geo_printout(neighborhoods, towns, regions, counties, st, msa, us)
     }
     message("Geographies included:\n", msg)
   }
@@ -142,9 +155,9 @@ multi_geo_acs <- function(table, year = 2018, towns = "all", regions = NULL, cou
 
   fetch[["state"]] <- acs_state(table, year, st, survey, key)
 
-  if (msa) {
+  if (!is.null(msa)) {
     if (year < 2015) warning("Heads up: OMB changed MSA boundaries around 2015. These might not match the ones you're expecting.")
-    fetch[["msa"]] <- acs_msa(table, year, new_england, survey, key)
+    fetch[["msa"]] <- acs_msa(table, year, msa, survey, key)
   }
 
   if (us) {
