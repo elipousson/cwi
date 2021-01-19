@@ -6,17 +6,16 @@
 \usage{
 multi_geo_acs(
   table,
-  year = 2018,
-  towns = "all",
+  year = 2019,
+  towns = NULL,
   regions = NULL,
   counties = "all",
-  state = "09",
+  state = Sys.getenv("STATE_FIPS_CODE"),
   neighborhoods = NULL,
   tracts = NULL,
   blockgroups = NULL,
-  msa = FALSE,
+  msa = NULL,
   us = FALSE,
-  new_england = TRUE,
   name = name,
   geoid = geoid,
   weight = weight,
@@ -28,15 +27,15 @@ multi_geo_acs(
 \arguments{
 \item{table}{A string giving the ACS table number.}
 
-\item{year}{The year of the ACS table; currently defaults 2018 (most recent available).}
+\item{year}{The year of the ACS table; currently defaults 2019 (most recent available).}
 
-\item{towns}{A character vector of names of towns to include; \code{"all"} (default) for all towns optionally filtered by county; or \code{NULL} to not fetch town-level table.}
+\item{towns}{A character vector of names of towns to include; \code{"all"} for all towns optionally filtered by county; or \code{NULL} (default) to not fetch town-level table.}
 
 \item{regions}{A named list of regions with their town names (defaults \code{NULL}).}
 
 \item{counties}{A character vector of names of counties to include; \code{"all"} (default) for all counties in the state; or \code{NULL} to not fetch county-level table.}
 
-\item{state}{A string: either name or two-digit FIPS code of a US state. Required; defaults \code{"09"} (Connecticut).}
+\item{state}{A string: either name or two-digit FIPS code of a US state. Required; defaults \code{Sys.getenv("STATE_FIPS_CODE")}. Set default to Connecticut with \code{Sys.setenv("STATE_FIPS_CODE" = "09")}.}
 
 \item{neighborhoods}{A data frame with columns for neighborhood name, GEOID of either tracts or block groups, and weight, e.g. share of each tract assigned to a neighborhood. If included, weighted sums and MOEs will be returned for neighborhoods.}
 
@@ -44,11 +43,9 @@ multi_geo_acs(
 
 \item{blockgroups}{A character vector of 12-digit FIPS codes of block groups to include, or \code{"all"} for all block groups optionally filtered by county. Defaults \code{NULL}.}
 
-\item{msa}{Logical: whether to fetch New England states' metropolitan statistical areas. Defaults \code{FALSE}.}
+\item{msa}{A character vector with the name or GeoID of the metropolitan statistical area to include.}
 
 \item{us}{Logical: whether to fetch US-level table. Defaults \code{FALSE}.}
-
-\item{new_england}{Logical: if \code{TRUE} (the default), limits metro areas to just New England states.}
 
 \item{name}{Bare column name of neighborhood names. Only relevant if a neighborhood weight table is being used. Defaults \code{name} to match the neighborhood lookup datasets.}
 
@@ -77,14 +74,14 @@ multi_geo_acs("B01003", 2018,
   towns = "all",
   regions = list(inner_ring = c("Hamden", "East Haven", "West Haven")),
   counties = "New Haven County",
-  tracts = unique(nhv_tracts$geoid))
+  tracts = unique(nhv_tracts$geoid)
+)
 
 multi_geo_acs("B01003", 2018,
   towns = "Bridgeport",
   counties = "Fairfield County",
   neighborhoods = bridgeport_tracts
 )
-
 }
 }
 \seealso{

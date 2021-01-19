@@ -7,10 +7,10 @@
 multi_geo_decennial(
   table,
   year = 2010,
-  towns = "all",
+  towns = NULL,
   regions = NULL,
   counties = "all",
-  state = "09",
+  state = Sys.getenv("STATE_FIPS_CODE"),
   neighborhoods = NULL,
   tracts = NULL,
   name = name,
@@ -26,13 +26,13 @@ multi_geo_decennial(
 
 \item{year}{The year of the census table; currently defaults 2010 (most recent decennial census).}
 
-\item{towns}{A character vector of towns to include; \code{"all"} (default) for all towns optionally filtered by county; or \code{NULL} to not fetch town-level table.}
+\item{towns}{A character vector of towns to include; \code{"all"} for all towns optionally filtered by county; or \code{NULL} (default) to not fetch town-level table.}
 
 \item{regions}{A named list of regions with their town names (defaults \code{NULL}).}
 
 \item{counties}{A character vector of counties to include; \code{"all"} (default) for all counties in the state; or \code{NULL} to not fetch county-level table.}
 
-\item{state}{A string: either name or two-digit FIPS code of a US state. Required; defaults \code{"09"} (Connecticut).}
+\item{state}{A string: either name or two-digit FIPS code of a US state. Required; defaults \code{Sys.getenv("STATE_FIPS_CODE")}. Set default to Connecticut with \code{Sys.setenv("STATE_FIPS_CODE" = "09")}.}
 
 \item{neighborhoods}{A data frame with columns for neighborhood name, GEOID of tracts, and weight, e.g. share of each tract assigned to a neighborhood. If included, weighted sums will be returned for neighborhoods. Unlike \code{multi_geo_acs}, this doesn't take block groups.}
 

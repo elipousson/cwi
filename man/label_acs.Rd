@@ -4,12 +4,12 @@
 \alias{label_acs}
 \title{Quickly add the labels of ACS variables}
 \usage{
-label_acs(df, year = 2018, survey = "acs5", variable = variable)
+label_acs(df, year = 2019, survey = "acs5", variable = variable)
 }
 \arguments{
 \item{df}{A data frame/tibble.}
 
-\item{year}{The endyear of ACS data; defaults 2018.}
+\item{year}{The endyear of ACS data; defaults 2019.}
 
 \item{survey}{A string: which ACS estimate to use. Defaults to 5-year (\code{"acs5"}), but can also be 1-year (\code{"acs1"}) or 3-year (\code{"acs3"}), though both 1-year and 3-year have limited availability.}
 
