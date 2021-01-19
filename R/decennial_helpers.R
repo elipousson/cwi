@@ -29,7 +29,6 @@ decennial_towns <- function(table, year, towns, counties, state, sumfile, key) {
 
 decennial_counties <- function(table, year, counties, state, sumfile, key) {
   fetch <- suppressMessages(tidycensus::get_decennial(geography = "county", table = table, year = year, state = state, sumfile = sumfile, key = key)) %>%
-    dplyr::mutate(NAME = stringr::str_extract(NAME, "^.+County")) %>%
     dplyr::mutate(state = state)
 
   if (!identical(counties, "all")) {
