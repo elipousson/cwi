@@ -8,10 +8,10 @@
 #'
 #' @param table A string giving the decennial census table number. These are generally formatted as one or more letters, 3 numbers, and optionally a letter.
 #' @param year The year of the census table; currently defaults 2010 (most recent decennial census).
-#' @param towns A character vector of towns to include; `"all"` (default) for all towns optionally filtered by county; or `NULL` to not fetch town-level table.
+#' @param towns A character vector of towns to include; `"all"` for all towns optionally filtered by county; or `NULL` (default) to not fetch town-level table.
 #' @param regions A named list of regions with their town names (defaults `NULL`).
 #' @param counties A character vector of counties to include; `"all"` (default) for all counties in the state; or `NULL` to not fetch county-level table.
-#' @param state A string: either name or two-digit FIPS code of a US state. Required; defaults `"09"` (Connecticut).
+#' @param state A string: either name or two-digit FIPS code of a US state. Required; defaults `Sys.getenv("STATE_FIPS_CODE")`. Set default to Connecticut with `Sys.setenv("STATE_FIPS_CODE" = "09")`.
 #' @param tracts A character vector of 11-digit FIPS codes of tracts to include, or `"all"` for all tracts optionally filtered by county. Defaults `NULL`.
 #' @param sumfile A string giving the summary file to pull from. Defaults `"sf1"`; in some rare cases, `"sf3"` may be appropriate.
 #' @param neighborhoods A data frame with columns for neighborhood name, GEOID of tracts, and weight, e.g. share of each tract assigned to a neighborhood. If included, weighted sums will be returned for neighborhoods. Unlike `multi_geo_acs`, this doesn't take block groups.
@@ -30,7 +30,20 @@
 #'   counties = "New Haven County")
 #' }
 #' @export
-multi_geo_decennial <- function(table, year = 2010, towns = "all", regions = NULL, counties = "all", state = "09", neighborhoods = NULL, tracts = NULL, name = name, geoid = geoid, weight = weight, sumfile = "sf1", verbose = TRUE, key = NULL) {
+multi_geo_decennial <- function(table,
+                                year = 2010,
+                                towns = NULL,
+                                regions = NULL,
+                                counties = "all",
+                                state = Sys.getenv("STATE_FIPS_CODE"),
+                                neighborhoods = NULL,
+                                tracts = NULL,
+                                name = name,
+                                geoid = geoid,
+                                weight = weight,
+                                sumfile = "sf1",
+                                verbose = TRUE,
+                                key = NULL) {
   # check key
   if (is.null(key)) {
     key <- Sys.getenv("CENSUS_API_KEY")
@@ -56,7 +69,6 @@ multi_geo_decennial <- function(table, year = 2010, towns = "all", regions = NUL
   # drop counties that aren't in state_lookup with a warning
   # skip all this if counties == NULL or counties == "all"
   if (!is.null(counties) & !identical(counties, "all")) {
-    counties <- stringr::str_replace(counties, "(?<! County)$", " County")
 
     possible_counties <- state_lookup %>%
       dplyr::pull(county)
@@ -96,9 +108,9 @@ multi_geo_decennial <- function(table, year = 2010, towns = "all", regions = NUL
       `[`(1)
     message(stringr::str_glue("Table {table}: {concept}, {year}"))
     if (!is.null(neighborhoods)) {
-      msg <- geo_printout(dplyr::pull(neighborhoods, {{ name }}), towns, regions, counties, st, msa = FALSE, new_england = FALSE)
+      msg <- geo_printout(dplyr::pull(neighborhoods, {{ name }}), towns, regions, counties, st)
     } else {
-      msg <- geo_printout(neighborhoods, towns, regions, counties, st, msa = FALSE, new_england = FALSE)
+      msg <- geo_printout(neighborhoods, towns, regions, counties, st)
     }
     message("Geographies included:\n", msg)
   }
