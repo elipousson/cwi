@@ -15,7 +15,7 @@ acs_towns <- function(table, year, towns, counties, state, survey, key) {
 
 acs_counties <- function(table, year, counties, state, survey, key) {
   fetch <- suppressMessages(tidycensus::get_acs(geography = "county", table = table, year = year, state = state, survey = survey, key = key)) %>%
-    dplyr::mutate(NAME = stringr::str_extract(NAME, "^.+County(?=, )")) %>%
+    dplyr::mutate(NAME = stringr::str_extract(NAME, "^.+(?=, )")) %>%
     dplyr::mutate(state = state)
 
   if (!identical(counties, "all")) {
@@ -87,15 +87,11 @@ acs_nhood <- function(table, year, .data, counties, state, survey, name, geoid, 
     dplyr::ungroup()
 }
 
-acs_msa <- function(table, year, new_england, survey, key) {
-  fetch <- suppressMessages(tidycensus::get_acs(geography = "metropolitan statistical area/micropolitan statistical area", table = table, year = year, survey = survey, key = key))
-  if (new_england) {
-    ne_geoid <- msa %>%
-      dplyr::filter(region == "New England") %>%
-      dplyr::pull(GEOID)
-    fetch <- fetch %>%
-      dplyr::filter(GEOID %in% ne_geoid)
-  }
+acs_msa <- function(table, year, msa, survey, key) {
+  fetch <- suppressMessages(tidycensus::get_acs(geography = "metropolitan statistical area/micropolitan statistical area", table = table, year = year, survey = survey, key = key, cache_table = TRUE))
+
+  fetch <- fetch %>%
+    dplyr::filter(NAME %in% msa | GEOID %in% msa)
 
   fetch
 }
